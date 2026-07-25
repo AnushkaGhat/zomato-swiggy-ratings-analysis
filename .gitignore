@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+venv/
+env/
+.venv/
+
+# Data (large / not meant for version control)
+data/raw/*
+data/processed/*
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
