@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>What Actually Drives a Rating? — Zomato Bangalore Investigation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Space+Mono:wght@400;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #17161c;
+    --bg-raised: #1f1d25;
+    --hairline: #33313b;
+    --ink: #f1ece1;
+    --ink-dim: #a39d8e;
+    --saffron: #e8a33d;
+    --chili: #c1462f;
+    --olive: #7c8a5a;
+    --display: 'Fraunces', serif;
+    --mono: 'Space Mono', monospace;
+    --sans: 'Inter', sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 0 24px; }
+
+  /* Hero */
+  .hero {
+    padding: 88px 0 56px;
+    border-bottom: 1px solid var(--hairline);
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: "";
+    position: absolute;
+    top: -120px; right: -120px;
+    width: 340px; height: 340px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(232,163,61,0.16), transparent 70%);
+    pointer-events: none;
+  }
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--saffron);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .eyebrow::before {
+    content: "";
+    width: 24px; height: 1px;
+    background: var(--saffron);
+  }
+  h1 {
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: clamp(34px, 5.6vw, 58px);
+    line-height: 1.04;
+    letter-spacing: -0.01em;
+    margin: 20px 0 22px;
+    max-width: 15ch;
+  }
+  h1 em { font-style: italic; color: var(--saffron); font-weight: 400; }
+  .hero-sub {
+    font-size: 17px;
+    color: var(--ink-dim);
+    max-width: 56ch;
+    margin-bottom: 8px;
+  }
+  .hero-meta {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--ink-dim);
+    margin-top: 28px;
+    display: flex;
+    gap: 28px;
+    flex-wrap: wrap;
+  }
+  .hero-meta b { color: var(--ink); font-weight: 700; }
+
+  /* Stat strip */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    border-bottom: 1px solid var(--hairline);
+  }
+  .stat {
+    padding: 28px 20px;
+    border-right: 1px solid var(--hairline);
+  }
+  .stat:last-child { border-right: none; }
+  .stat .num {
+    font-family: var(--mono);
+    font-size: clamp(22px, 3vw, 30px);
+    font-weight: 700;
+    color: var(--saffron);
+  }
+  .stat .label {
+    font-size: 12.5px;
+    color: var(--ink-dim);
+    margin-top: 6px;
+  }
+
+  /* Findings */
+  .finding {
+    padding: 64px 0;
+    border-bottom: 1px solid var(--hairline);
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 40px;
+  }
+  .finding:last-of-type { border-bottom: none; }
+  .finding-tag {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--ink-dim);
+  }
+  .finding-tag .fnum {
+    display: block;
+    font-family: var(--display);
+    font-size: 40px;
+    color: var(--hairline);
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 10px;
+  }
+  .finding h2 {
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: 26px;
+    letter-spacing: -0.01em;
+    margin-bottom: 12px;
+  }
+  .finding p {
+    color: var(--ink-dim);
+    font-size: 15.5px;
+    max-width: 62ch;
+    margin-bottom: 20px;
+  }
+  .finding p b { color: var(--ink); font-weight: 600; }
+  .callout {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--saffron);
+    background: rgba(232,163,61,0.08);
+    border-left: 2px solid var(--saffron);
+    padding: 10px 14px;
+    margin-bottom: 22px;
+    max-width: 62ch;
+  }
+  .chart-box {
+    background: var(--bg-raised);
+    border: 1px solid var(--hairline);
+    border-radius: 6px;
+    padding: 20px;
+    height: 320px;
+  }
+  .chart-box.tall { height: 420px; }
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .pillbox {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 4px;
+  }
+  .pill {
+    font-family: var(--mono);
+    font-size: 12px;
+    padding: 6px 12px;
+    border: 1px solid var(--hairline);
+    border-radius: 999px;
+    color: var(--ink-dim);
+  }
+  .pill.hot { border-color: var(--chili); color: var(--chili); }
+
+  /* Footer */
+  footer {
+    padding: 48px 0 64px;
+    text-align: center;
+  }
+  footer p {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--ink-dim);
+  }
+  footer a { color: var(--saffron); text-decoration: none; }
+
+  @media (max-width: 760px) {
+    .finding { grid-template-columns: 1fr; gap: 14px; }
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .stat:nth-child(2) { border-right: none; }
+    .two-col { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="hero">
+    <div class="eyebrow">Bangalore · Zomato Ratings Investigation</div>
+    <h1>What actually decides a restaurant's <em>rating?</em></h1>
+    <p class="hero-sub">9,215 unique Bangalore restaurants, deduplicated from 41k raw listings. Structural factors — cost, cuisine, location — turned out to explain far less than what people actually wrote in their reviews.</p>
+    <div class="hero-meta">
+      <span><b>9,215</b> restaurants analyzed</span>
+      <span><b>41,376</b> raw listings deduplicated</span>
+      <span><b>3</b> notebooks · EDA → NLP → Model</span>
+    </div>
+  </div>
+
+  <div class="stats" id="stat-strip"></div>
+
+  <!-- F1 -->
+  <div class="finding">
+   <div class="finding-tag"><span class="fnum">01</span>Rating spread</div>
+    <div>
+      <h2>Ratings barely use the scale.</h2>
+      <p>The 1–5 scale exists, but almost nobody uses the ends of it. The overwhelming majority of restaurants sit between 3.0 and 4.5 — Zomato ratings function less like an honest quality measure and more like a narrow band of <b>"good enough" consensus.</b></p>
+      <div class="chart-box"><canvas id="chart-hist"></canvas></div>
+    </div>
+  </div>
+
+  <!-- F2 -->
+  <div class="finding">
+    <div class="finding-tag"><span class="fnum">02</span>Price vs. rating</div>
+    <div>
+      <h2>Cost matters — moderately, not decisively.</h2>
+      <p>Average rating does trend upward with price, but the relationship is moderate, not strong. Plenty of budget spots out-rate expensive ones.</p>
+      <div class="callout">correlation(cost, rating) = <span id="cost-corr"></span></div>
+      <div class="chart-box"><canvas id="chart-cost"></canvas></div>
+    </div>
+  </div>
+
+  <!-- F3 -->
+  <div class="finding">
+    <div class="finding-tag"><span class="fnum">03</span>The "seriousness" signal</div>
+    <div>
+      <h2>Table booking is a proxy, not a cause.</h2>
+      <p>Restaurants that allow table booking rate noticeably higher on average — but this isn't booking itself doing the work. It's a marker for a cluster of traits (upscale, sit-down, consistent service) that travel together.</p>
+      <div class="two-col">
+        <div class="chart-box"><canvas id="chart-booking"></canvas></div>
+        <div class="chart-box"><canvas id="chart-order"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- F4 -->
+  <div class="finding">
+    <div class="finding-tag"><span class="fnum">04</span>Cuisine &amp; geography</div>
+    <div>
+      <h2>Niche cuisines and upscale corridors cluster together.</h2>
+      <p>Mediterranean, European, and Asian cuisines top the cuisine leaderboard — not mainstream North/South Indian. The same story repeats geographically: Lavelle Road, Koramangala 5th Block, Church Street — Bangalore's premium dining corridors — top the location leaderboard.</p>
+      <div class="two-col">
+        <div class="chart-box tall"><canvas id="chart-cuisine"></canvas></div>
+        <div class="chart-box tall"><canvas id="chart-location"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- F5 -->
+  <div class="finding">
+    <div class="finding-tag"><span class="fnum">05</span>Sentiment vs. stars</div>
+    <div>
+      <h2>The star rating hides real signal.</h2>
+      <p>Review sentiment (scored with VADER) and star rating only loosely agree. At every star level — even 4.5 — some reviews read as genuinely negative. The number on the label isn't the whole story.</p>
+      <div class="callout">correlation(sentiment, rating) = <span id="sent-corr"></span> — moderate at best</div>
+      <div class="pillbox">
+        <span class="pill hot">refund</span>
+        <span class="pill hot">deliver</span>
+        <span class="pill hot">worst</span>
+        <span class="pill hot">received</span>
+        <span class="pill">pathetic</span>
+        <span class="pill">tasteless</span>
+        <span class="pill">poor</span>
+        <span class="pill">stale</span>
+        <span class="pill">rude</span>
+      </div>
+      <p style="margin-top:16px;">Words disproportionately common in negative reviews (vs. positive ones) point mostly to <b>delivery and fulfillment failures</b> — not kitchen quality.</p>
+    </div>
+  </div>
+
+  <!-- F6 -->
+  <div class="finding">
+    <div class="finding-tag"><span class="fnum">06</span>The model verdict</div>
+    <div>
+      <h2>Review-derived signals beat every structural factor.</h2>
+      <p>A tuned Gradient Boosting model, trained on deduplicated data with richer review-based features, confirms it numerically: <b>signals pulled from reviews and dish tags — not cost, cuisine, or location — carry the most predictive weight.</b></p>
+      <div class="callout">model accuracy = <span id="model-acc"></span> on held-out, fully deduplicated data, tuned via grid search — up from 60.4% with an untuned model. An earlier un-deduplicated run showed 82.5%, later traced to train/test leakage from duplicate restaurant listings and corrected here.</div>
+      <div class="callout">caveat: <b>dish_liked_count</b> (the top feature) likely partly reflects how much attention/engagement a restaurant has received, not food quality alone — similar to review_count. Worth reading alongside sentiment, not instead of it.</div>
+      <div class="chart-box tall"><canvas id="chart-importance"></canvas></div>
+    </div>
+  </div>
+
+  <footer>
+    <p>Built from 9,215 deduplicated Bangalore restaurants · Zomato Bangalore Restaurants dataset (Kaggle)<br>
+    Full analysis, notebooks &amp; code: <a href="https://github.com/AnushkaGhat/zomato-swiggy-ratings-analysis" target="_blank">github.com/AnushkaGhat/zomato-swiggy-ratings-analysis</a></p>
+  </footer>
+</div>
+
+<script>
+const DATA = {"total_restaurants": 9215, "mean_rating": 3.631264243081932, "rating_histogram": {"counts": [1, 7, 4, 33, 29, 146, 144, 481, 413, 1153, 1323, 788, 1728, 832, 1158, 361, 414, 102, 73, 25], "edges": [1.8, 1.955, 2.11, 2.265, 2.42, 2.575, 2.73, 2.885, 3.04, 3.195, 3.35, 3.505, 3.66, 3.815, 3.97, 4.125, 4.28, 4.435, 4.59, 4.745, 4.9]}, "cost_vs_rating": [{"cost_mid": 235.6865, "rate": 3.5532072368421055}, {"cost_mid": 636.0, "rate": 3.618689244277203}, {"cost_mid": 1033.3335, "rate": 3.8518945634266886}, {"cost_mid": 1430.6665, "rate": 4.154516129032259}, {"cost_mid": 1828.0, "rate": 4.127941176470588}, {"cost_mid": 2225.3335, "rate": 3.9782608695652173}, {"cost_mid": 2622.6665, "rate": 4.164864864864865}, {"cost_mid": 3020.0, "rate": 4.189655172413793}, {"cost_mid": 3417.3335, "rate": 4.3}, {"cost_mid": 3814.6665, "rate": 4.188888888888889}, {"cost_mid": 4212.0, "rate": 4.1}, {"cost_mid": 4609.3335, "rate": 4.3}, {"cost_mid": 5006.6665, "rate": 4.3}, {"cost_mid": 5801.3335, "rate": 4.3}], "cost_rating_correlation": 0.3342996806865897, "top_cuisines": [{"cuisines": "Mediterranean", "mean": 4.2046511627906975, "count": 86}, {"cuisines": "European", "mean": 4.195, "count": 100}, {"cuisines": "Asian", "mean": 4.0680203045685275, "count": 197}, {"cuisines": "Steak", "mean": 4.043243243243243, "count": 74}, {"cuisines": "BBQ", "mean": 4.0109375, "count": 128}, {"cuisines": "American", "mean": 3.9645, "count": 200}, {"cuisines": "Mexican", "mean": 3.9505050505050505, "count": 99}, {"cuisines": "Finger Food", "mean": 3.941875, "count": 160}, {"cuisines": "Salad", "mean": 3.9321637426900584, "count": 171}, {"cuisines": "Continental", "mean": 3.8921020656136087, "count": 823}, {"cuisines": "Italian", "mean": 3.881139489194499, "count": 509}, {"cuisines": "Thai", "mean": 3.845303867403315, "count": 181}, {"cuisines": "Cafe", "mean": 3.814592933947773, "count": 651}, {"cuisines": "Healthy Food", "mean": 3.794, "count": 150}, {"cuisines": "Desserts", "mean": 3.7939583333333333, "count": 960}], "top_locations": [{"location": "Lavelle Road", "mean": 4.076923076923077, "count": 52}, {"location": "Koramangala 5th Block", "mean": 3.9204166666666667, "count": 240}, {"location": "St. Marks Road", "mean": 3.9176470588235293, "count": 34}, {"location": "Church Street", "mean": 3.8981481481481484, "count": 54}, {"location": "Residency Road", "mean": 3.83972602739726, "count": 73}, {"location": "Koramangala 4th Block", "mean": 3.835576923076923, "count": 104}, {"location": "Richmond Road", "mean": 3.8313432835820893, "count": 67}, {"location": "MG Road", "mean": 3.8292682926829267, "count": 82}, {"location": "Indiranagar", "mean": 3.7933486238532113, "count": 436}, {"location": "Jayanagar", "mean": 3.7661073825503353, "count": 298}, {"location": "Koramangala 7th Block", "mean": 3.757364341085271, "count": 129}, {"location": "Vasanth Nagar", "mean": 3.7404761904761905, "count": 42}, {"location": "Cunningham Road", "mean": 3.740425531914894, "count": 47}, {"location": "Malleshwaram", "mean": 3.7351758793969845, "count": 199}, {"location": "Kalyan Nagar", "mean": 3.733333333333333, "count": 192}], "booking_effect": {"0": 3.5769193626267506, "1": 4.114822771213749}, "order_effect": {"0": 3.5910164835164835, "1": 3.657542600896861}, "sentiment_rating_correlation": 0.37566405132340275, "feature_importance": {"dish_liked_count": 0.2604212857012466, "sentiment_score": 0.19821929348621575, "review_text_length": 0.1212853285862223, "cost_for_two": 0.07549931572250757, "review_count_parsed": 0.07459040380907764, "location_grouped_target_enc": 0.07023546753979693, "primary_cuisine_target_enc": 0.06480128413121485, "primary_rest_type_target_enc": 0.045960336489311936, "book_table": 0.03635169114830674, "cuisine_count": 0.03252348641003314, "online_order": 0.02011210697606647}, "model_accuracy": 0.6635919696147585, "model_used": "HistGradientBoosting (tuned)", "problem_restaurant_count": null};
+
+Chart.defaults.color = '#a39d8e';
+Chart.defaults.font.family = "'Inter', sans-serif";
+Chart.defaults.font.size = 11;
+Chart.defaults.borderColor = '#33313b';
+
+const SAFFRON = '#e8a33d';
+const CHILI = '#c1462f';
+const OLIVE = '#7c8a5a';
+const INK = '#f1ece1';
+
+function fmt(n, d=2) { return Number(n).toFixed(d); }
+
+// Stat strip
+const niceNamesEarly = {
+  sentiment_score: 'review sentiment', cost_for_two: 'cost for two',
+  review_count_parsed: 'review count', location_grouped_target_enc: 'location',
+  primary_cuisine_target_enc: 'cuisine', primary_rest_type_target_enc: 'restaurant type',
+  book_table: 'table booking', cuisine_count: '# cuisines listed', online_order: 'online order',
+  dish_liked_count: 'liked-dish tags', review_text_length: 'review text length'
+};
+const topFeatureEntry = Object.entries(DATA.feature_importance).sort((a,b) => b[1]-a[1])[0];
+const topFeatureName = niceNamesEarly[topFeatureEntry[0]] || topFeatureEntry[0];
+
+const statStrip = document.getElementById('stat-strip');
+const stats = [
+  [DATA.total_restaurants.toLocaleString(), 'unique restaurants'],
+  [fmt(DATA.mean_rating), 'average rating'],
+  [fmt(DATA.model_accuracy * 100, 1) + '%', 'model accuracy (' + (DATA.model_used || 'tuned model') + ')'],
+  [fmt(topFeatureEntry[1] * 100, 0) + '%', topFeatureName + ' — top feature']
+];
+stats.forEach(([num, label]) => {
+  const div = document.createElement('div');
+  div.className = 'stat';
+  div.innerHTML = `<div class="num">${num}</div><div class="label">${label}</div>`;
+  statStrip.appendChild(div);
+});
+
+document.getElementById('cost-corr').textContent = fmt(DATA.cost_rating_correlation);
+document.getElementById('sent-corr').textContent = fmt(DATA.sentiment_rating_correlation);
+document.getElementById('model-acc').textContent = fmt(DATA.model_accuracy * 100, 1) + '%';
+
+const gridOpt = { color: '#2a2831' };
+const baseOpts = {
+  responsive: true, maintainAspectRatio: false,
+  plugins: { legend: { display: false } },
+  scales: {
+    x: { grid: gridOpt, ticks: { font: { size: 10 } } },
+    y: { grid: gridOpt, ticks: { font: { size: 10 } } }
+  }
+};
+
+// F1: histogram
+new Chart(document.getElementById('chart-hist'), {
+  type: 'bar',
+  data: {
+    labels: DATA.rating_histogram.edges.slice(0, -1).map((e,i) => fmt((e + DATA.rating_histogram.edges[i+1])/2, 1)),
+    datasets: [{ data: DATA.rating_histogram.counts, backgroundColor: SAFFRON, borderRadius: 2 }]
+  },
+  options: { ...baseOpts,
+    scales: { ...baseOpts.scales,
+      x: { ...baseOpts.scales.x, title: { display: true, text: 'rating', color: '#a39d8e', font: {size: 10} } },
+      y: { ...baseOpts.scales.y, title: { display: true, text: 'restaurants', color: '#a39d8e', font: {size: 10} } }
+    }
+  }
+});
+
+// F2: cost vs rating line
+new Chart(document.getElementById('chart-cost'), {
+  type: 'line',
+  data: {
+    labels: DATA.cost_vs_rating.map(d => '₹' + Math.round(d.cost_mid)),
+    datasets: [{ data: DATA.cost_vs_rating.map(d => d.rate), borderColor: CHILI, backgroundColor: 'rgba(193,70,47,0.15)', fill: true, tension: 0.35, pointRadius: 3, pointBackgroundColor: CHILI }]
+  },
+  options: { ...baseOpts,
+    scales: { ...baseOpts.scales,
+      x: { ...baseOpts.scales.x, title: { display: true, text: 'cost for two', color: '#a39d8e', font: {size: 10} } },
+      y: { ...baseOpts.scales.y, title: { display: true, text: 'avg rating', color: '#a39d8e', font: {size: 10} } }
+    }
+  }
+});
+
+// F3: booking / order
+function binaryChart(el, dataObj, label, color) {
+  new Chart(document.getElementById(el), {
+    type: 'bar',
+    data: {
+      labels: ['No', 'Yes'],
+      datasets: [{ data: [dataObj['0'], dataObj['1']], backgroundColor: [ '#3d3a44', color ], borderRadius: 4 }]
+    },
+    options: { ...baseOpts,
+      plugins: { legend: { display: false }, title: { display: true, text: label, color: INK, font: { size: 12, family: "'Space Mono', monospace" } } },
+      scales: { ...baseOpts.scales, y: { ...baseOpts.scales.y, suggestedMin: 3, suggestedMax: 4.5 } }
+    }
+  });
+}
+binaryChart('chart-booking', DATA.booking_effect, 'avg rating — table booking', SAFFRON);
+binaryChart('chart-order', DATA.order_effect, 'avg rating — online order', OLIVE);
+
+// F4: cuisines / locations (horizontal)
+function hBarChart(el, items, labelKey, color) {
+  new Chart(document.getElementById(el), {
+    type: 'bar',
+    data: {
+      labels: items.map(d => d[labelKey]),
+      datasets: [{ data: items.map(d => d.mean), backgroundColor: color, borderRadius: 3 }]
+    },
+    options: {
+      indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: gridOpt, suggestedMin: 3.5, suggestedMax: 4.3, ticks: { font: { size: 10 } } },
+        y: { grid: { display: false }, ticks: { font: { size: 10 } } }
+      }
+    }
+  });
+}
+hBarChart('chart-cuisine', [...DATA.top_cuisines].reverse(), 'cuisines', SAFFRON);
+hBarChart('chart-location', [...DATA.top_locations].reverse(), 'location', CHILI);
+
+// F6: feature importance
+const fi = Object.entries(DATA.feature_importance).sort((a,b) => b[1]-a[1]);
+const niceNames = {
+  sentiment_score: 'review sentiment',
+  cost_for_two: 'cost for two',
+  review_count_parsed: 'review count',
+  location_grouped_target_enc: 'location',
+  primary_cuisine_target_enc: 'cuisine',
+  primary_rest_type_target_enc: 'restaurant type',
+  book_table: 'table booking',
+  cuisine_count: '# cuisines listed',
+  online_order: 'online order',
+  dish_liked_count: 'liked-dish tags',
+  review_text_length: 'review text length'
+};
+new Chart(document.getElementById('chart-importance'), {
+  type: 'bar',
+  data: {
+    labels: fi.map(([k]) => niceNames[k] || k),
+    datasets: [{ data: fi.map(([,v]) => v), backgroundColor: fi.map((_,i) => i===0 ? CHILI : SAFFRON), borderRadius: 3 }]
+  },
+  options: {
+    indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: gridOpt, ticks: { font: { size: 10 } } },
+      y: { grid: { display: false }, ticks: { font: { size: 11 } } }
+    }
+  }
+});
+</script>
+</body>
+</html>

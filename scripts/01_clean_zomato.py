@@ -127,6 +127,30 @@ def drop_bad_rows(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+def deduplicate_to_restaurant_level(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    This dataset lists each restaurant once PER service category it offers
+    (listing_type: Buffet, Cafes, Delivery, Desserts, Dine-out, Drinks &
+    nightlife, Pubs and bars). A single popular restaurant can appear 5-7+
+    times. For restaurant-level analysis (ratings, cost, cuisine, location),
+    we collapse to one row per (name, location), keeping the row with the
+    highest vote count as the most complete/current snapshot.
+
+    The full un-deduplicated data is preserved separately (zomato_clean_full.csv)
+    in case listing_type-level analysis (e.g. "how do delivery ratings compare
+    to dine-out ratings for the same restaurant") is wanted later.
+    """
+    before = len(df)
+    df_dedup = (
+        df.sort_values("votes", ascending=False)
+        .drop_duplicates(subset=["name", "location"], keep="first")
+        .reset_index(drop=True)
+    )
+    after = len(df_dedup)
+    print(f"Deduplicated {before:,} restaurant-listing rows -> {after:,} unique restaurants")
+    return df_dedup
+
+
 def main():
     df = load_raw(RAW_PATH)
     df = drop_useless_columns(df)
@@ -138,10 +162,16 @@ def main():
     df = drop_bad_rows(df)
 
     os.makedirs(os.path.dirname(OUT_PATH), exist_ok=True)
-    df.to_csv(OUT_PATH, index=False)
-    print(f"Saved cleaned data to {OUT_PATH}")
-    print(df.dtypes)
-    print(df.head())
+
+    full_out_path = OUT_PATH.replace(".csv", "_full.csv")
+    df.to_csv(full_out_path, index=False)
+    print(f"Saved full listing-level data to {full_out_path}")
+
+    df_restaurant = deduplicate_to_restaurant_level(df)
+    df_restaurant.to_csv(OUT_PATH, index=False)
+    print(f"Saved deduplicated restaurant-level data to {OUT_PATH}")
+    print(df_restaurant.dtypes)
+    print(df_restaurant.head())
 
 
 if __name__ == "__main__":

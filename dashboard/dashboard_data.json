@@ -1,0 +1,28 @@
+{
+  "total_restaurants": 9215,
+  "mean_rating": 3.631264243081932,
+  "rating_histogram": {"counts": [1,7,4,33,29,146,144,481,413,1153,1323,788,1728,832,1158,361,414,102,73,25], "edges": [1.8,1.955,2.11,2.265,2.42,2.575,2.73,2.885,3.04,3.195,3.35,3.505,3.66,3.815,3.97,4.125,4.28,4.435,4.59,4.745,4.9]},
+  "cost_vs_rating": [{"cost_mid":235.6865,"rate":3.5532072368421054},{"cost_mid":636.0,"rate":3.618689244277203},{"cost_mid":1033.3335,"rate":3.8518945634266886},{"cost_mid":1430.6665,"rate":4.154516129032259},{"cost_mid":1828.0,"rate":4.127941176470588},{"cost_mid":2225.3335,"rate":3.9782608695652173},{"cost_mid":2622.6665,"rate":4.164864864864865},{"cost_mid":3020.0,"rate":4.189655172413793},{"cost_mid":3417.3335,"rate":4.3},{"cost_mid":3814.6665,"rate":4.188888888888889},{"cost_mid":4212.0,"rate":4.1},{"cost_mid":4609.3335,"rate":4.3},{"cost_mid":5006.6665,"rate":4.3},{"cost_mid":5801.3335,"rate":4.3}],
+  "cost_rating_correlation": 0.3342996806865897,
+  "top_cuisines": [{"cuisines":"Mediterranean","mean":4.2046511627906975,"count":86},{"cuisines":"European","mean":4.195,"count":100},{"cuisines":"Asian","mean":4.0680203045685275,"count":197},{"cuisines":"Steak","mean":4.043243243243243,"count":74},{"cuisines":"BBQ","mean":4.0109375,"count":128},{"cuisines":"American","mean":3.9645,"count":200},{"cuisines":"Mexican","mean":3.9505050505050505,"count":99},{"cuisines":"Finger Food","mean":3.94187500000000005,"count":160},{"cuisines":"Salad","mean":3.9321637426900584,"count":171},{"cuisines":"Continental","mean":3.8921020656136087,"count":823},{"cuisines":"Italian","mean":3.881139489194499,"count":509},{"cuisines":"Thai","mean":3.845303867403315,"count":181},{"cuisines":"Cafe","mean":3.814592933947773,"count":651},{"cuisines":"Healthy Food","mean":3.794,"count":150},{"cuisines":"Desserts","mean":3.7939583333333333,"count":960}],
+  "top_locations": [{"location":"Lavelle Road","mean":4.076923076923077,"count":52},{"location":"Koramangala 5th Block","mean":3.9204166666666667,"count":240},{"location":"St. Marks Road","mean":3.9176470588235293,"count":34},{"location":"Church Street","mean":3.8981481481481484,"count":54},{"location":"Residency Road","mean":3.83972602739726,"count":73},{"location":"Koramangala 4th Block","mean":3.835576923076923,"count":104},{"location":"Richmond Road","mean":3.8313432835820893,"count":67},{"location":"MG Road","mean":3.8292682926829267,"count":82},{"location":"Indiranagar","mean":3.7933486238532113,"count":436},{"location":"Jayanagar","mean":3.7661073825503353,"count":298},{"location":"Koramangala 7th Block","mean":3.757364341085271,"count":129},{"location":"Vasanth Nagar","mean":3.7404761904761905,"count":42},{"location":"Cunningham Road","mean":3.740425531914894,"count":47},{"location":"Malleshwaram","mean":3.7351758793969845,"count":199},{"location":"Kalyan Nagar","mean":3.733333333333333,"count":192}],
+  "booking_effect": {"0": 3.5769193626267506, "1": 4.114822771213749},
+  "order_effect": {"0": 3.5910164835164835, "1": 3.657542600896861},
+  "sentiment_rating_correlation": 0.37566405132340275,
+  "feature_importance": {
+    "dish_liked_count": 0.2604212857012466,
+    "sentiment_score": 0.19821929348621575,
+    "review_text_length": 0.1212853285862223,
+    "cost_for_two": 0.07549931572250757,
+    "review_count_parsed": 0.07459040380907764,
+    "location_grouped_target_enc": 0.07023546753979693,
+    "primary_cuisine_target_enc": 0.06480128413121485,
+    "primary_rest_type_target_enc": 0.045960336489311936,
+    "book_table": 0.03635169114830674,
+    "cuisine_count": 0.03252348641003314,
+    "online_order": 0.02011210697606647
+  },
+  "model_accuracy": 0.6635919696147585,
+  "model_used": "HistGradientBoosting (tuned)",
+  "problem_restaurant_count": null
+}
